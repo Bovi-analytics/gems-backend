@@ -38,3 +38,4 @@ numpy
 ydata-profiling
 azure-storage-blob
 gdown
+IPython
