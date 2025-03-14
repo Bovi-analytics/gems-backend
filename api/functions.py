@@ -224,8 +224,11 @@ def generate_report_per_sheet(excel_data):
             continue
 
         report_filename = f"{sheet_name}_report.html"
+        print("........Before ProfilingReport function.........")
         report = ProfileReport(processed_df, title=f"Profiling Report for {sheet_name}", explorative=True)
+        print(".......After ProfilingReport function........")
         report.to_file(report_filename)  # Save to file
+        print(".........After to_file function.........")
 
         reports.append(report_filename)  # Store filename for later use
 
