@@ -144,12 +144,13 @@ def upload():
         # Generate URL of the processed files folder
         processed_file_url = f"https://methanedata.blob.core.windows.net/{CONTAINER_NAME}"
 
-        sender_email = os.getenv("EMAIL")
-        app_password = os.getenv("APP_PASSWORD")
+        # sender_email = os.getenv("EMAIL")
+        # app_password = os.getenv("APP_PASSWORD")
+        
         recipient_emails = emails.split(',')  # Add your recipients
 
         send_email_with_reports(
-            sender_email, app_password, recipient_emails,
+            recipient_emails,
             output_messages, output_messages_columns
         )
 

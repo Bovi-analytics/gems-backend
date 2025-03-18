@@ -4,7 +4,12 @@ import numpy as np
 import pandas as pd
 import smtplib
 import io
-
+import base64
+import json
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
 import smtplib
 import glob
 import os
@@ -238,12 +243,29 @@ def generate_report_per_sheet(excel_data):
     return reports  # ✅ Returns list of HTML report filenames
 
 
-def send_email_with_reports(sender_email, app_password, recipient_emails, output_messages, output_messages_columns):
-    """
-    Sends an HTML-styled email with structured tables for readability.
-    """
+def send_email_with_reports(recipient_emails, output_messages, output_messages_columns):
+    """Sends an email using Gmail API with the provided report."""
     
-    # Email subject
+    def load_credentials():
+        # with open("token.json", "r") as token_file:
+        #     data = json.load(token_file)
+        data = {
+        "refresh_token": os.getenv("GMAIL_REFRESH_TOKEN"),
+        "client_id": os.getenv("GMAIL_CLIENT_ID"),
+        "client_secret": os.getenv("GMAIL_CLIENT_SECRET"),
+        "token_uri": os.getenv("GMAIL_TOKEN_URI")
+        }
+
+        creds = Credentials.from_authorized_user_info(info=data)
+        if creds.expired and creds.refresh_token:
+            creds.refresh(Request())  # Automatically refreshes the access token
+
+        return creds
+    
+    creds = load_credentials()
+    service = build("gmail", "v1", credentials=creds) # Authenticate and get Gmail API service
+    sender_email = "info@bovi-analytics.com"  # Update this with your email
+
     subject = "📊 Data Quality & Profiling Report"
 
     # ✅ **Format `output_messages_columns` into an HTML Table**
@@ -252,16 +274,13 @@ def send_email_with_reports(sender_email, app_password, recipient_emails, output
 
     for line in output_messages_columns:
         if line.startswith("\nSheet '"):  
-            # Extract sheet name correctly
             current_sheet = line.strip("\n:").split()[-1]
         else:
-            # Extract column details
             parts = line.split(": ", 1)
             if len(parts) == 2:
                 column, issue = parts
                 table_rows += f"<tr><td>{current_sheet}</td><td>{column.strip()}</td><td>{issue.strip()}</td></tr>"
 
-    # If no issues found
     if not table_rows:
         table_rows = "<tr><td colspan='3' style='text-align:center; color: green;'>✅ No issues found.</td></tr>"
 
@@ -282,56 +301,27 @@ def send_email_with_reports(sender_email, app_password, recipient_emails, output
                 border-radius: 8px;
                 box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
             }}
-            h2 {{
-                color: #333;
-                text-align: center;
-            }}
-            p {{
-                font-size: 14px;
-                line-height: 1.5;
-                color: #555;
-            }}
+            h2 {{ color: #333; text-align: center; }}
+            p {{ font-size: 14px; line-height: 1.5; color: #555; }}
             .section {{
                 background: #f9f9f9;
                 padding: 10px;
                 border-radius: 6px;
                 margin-bottom: 15px;
             }}
-            .footer {{
-                text-align: center;
-                font-size: 12px;
-                color: #888;
-                margin-top: 20px;
-            }}
-            table {{
-                width: 100%;
-                border-collapse: collapse;
-                margin-top: 10px;
-            }}
-            th, td {{
-                border: 1px solid #ddd;
-                padding: 8px;
-                text-align: left;
-            }}
-            th {{
-                background-color: #007bff;
-                color: white;
-            }}
-            tr:nth-child(even) {{
-                background-color: #f2f2f2;
-            }}
+            .footer {{ text-align: center; font-size: 12px; color: #888; margin-top: 20px; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
+            th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+            th {{ background-color: #007bff; color: white; }}
+            tr:nth-child(even) {{ background-color: #f2f2f2; }}
         </style>
     </head>
     <body>
         <div class="container">
             <h2>🔍 Data Validation & Profiling Report</h2>
-
             <p>Dear Data Provider,</p>
-
-            <p>
-                Thank you for submitting your data for processing. Below, you'll find an automated data quality 
-                assessment that includes key insights, validation checks, and profiling reports.
-            </p>
+            <p>Thank you for submitting your data for processing. Below, you'll find an automated data quality 
+               assessment that includes key insights, validation checks, and profiling reports.</p>
 
             <div class="section">
                 <h3>1️⃣ Mismatches with Ground Truth</h3>
@@ -355,51 +345,205 @@ def send_email_with_reports(sender_email, app_password, recipient_emails, output
                 <p>📊 Please see the attached profiling reports for a detailed analysis of your dataset.</p>
             </div>
 
-            <p>
-                Our pipeline is continuously improving with your feedback, ensuring that we maintain high data quality standards.
-                If you have any questions or feedback, feel free to reach out.
-            </p>
-
+            <p>Our pipeline is continuously improving with your feedback, ensuring that we maintain high data quality standards.</p>
             <p>Best regards,</p>
             <p><strong>Bovi-Analytics Team</strong></p>
-
-            <div class="footer">
-                📧 This is an automated message. Please do not reply directly.
-            </div>
+            <div class="footer">📧 This is an automated message. Please do not reply directly.</div>
         </div>
     </body>
     </html>
     """
 
+    # Create email message
+    msg = MIMEMultipart()
+    msg["From"] = sender_email
+    msg["To"] = ", ".join(recipient_emails)
+    msg["Subject"] = subject
+    msg.attach(MIMEText(html_body, "html"))
+
+    # Attach generated HTML reports
+    report_files = glob.glob("*_report.html")
+    for report_file in report_files:
+        with open(report_file, "rb") as attachment:
+            part = MIMEBase("application", "octet-stream")
+            part.set_payload(attachment.read())
+            encoders.encode_base64(part)
+            part.add_header("Content-Disposition", f"attachment; filename={os.path.basename(report_file)}")
+            msg.attach(part)
+
+    # Convert email to base64
+    raw_message = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+
     try:
-        # Initialize email
-        msg = MIMEMultipart()
-        msg['From'] = sender_email
-        msg['To'] = ", ".join(recipient_emails)
-        msg['Subject'] = subject
-        msg.attach(MIMEText(html_body, "html"))  # ✅ Use HTML instead of plain text
-
-        # Attach generated HTML reports
-        report_files = glob.glob("*_report.html")
-        if report_files:
-            for report_file in report_files:
-                with open(report_file, "rb") as attachment:
-                    part = MIMEBase("application", "octet-stream")
-                    part.set_payload(attachment.read())
-                    encoders.encode_base64(part)
-                    part.add_header("Content-Disposition", f"attachment; filename={os.path.basename(report_file)}")
-                    msg.attach(part)
-        else:
-            print("⚠ No report files found for attachment.")
-
-        # Send email
-        smtp_server = "smtp.gmail.com"
-        port = 587
-        with smtplib.SMTP(smtp_server, port) as server:
-            server.starttls()
-            server.login(sender_email, app_password)
-            server.sendmail(sender_email, recipient_emails, msg.as_string())
-            print("✅ Email sent successfully with attached reports!")
-
+        # Send email using Gmail API
+        service.users().messages().send(userId="me", body={"raw": raw_message}).execute()
+        print("✅ Email sent successfully with attached reports!")
     except Exception as e:
         print(f"❌ Failed to send email: {e}")
+
+
+# def send_email_with_reports(sender_email, app_password, recipient_emails, output_messages, output_messages_columns):
+#     """
+#     Sends an HTML-styled email with structured tables for readability.
+#     """
+    
+#     # Email subject
+#     subject = "📊 Data Quality & Profiling Report"
+
+#     # ✅ **Format `output_messages_columns` into an HTML Table**
+#     table_rows = ""
+#     current_sheet = None
+
+#     for line in output_messages_columns:
+#         if line.startswith("\nSheet '"):  
+#             # Extract sheet name correctly
+#             current_sheet = line.strip("\n:").split()[-1]
+#         else:
+#             # Extract column details
+#             parts = line.split(": ", 1)
+#             if len(parts) == 2:
+#                 column, issue = parts
+#                 table_rows += f"<tr><td>{current_sheet}</td><td>{column.strip()}</td><td>{issue.strip()}</td></tr>"
+
+#     # If no issues found
+#     if not table_rows:
+#         table_rows = "<tr><td colspan='3' style='text-align:center; color: green;'>✅ No issues found.</td></tr>"
+
+#     # ✅ **HTML Email Template with Inline CSS**
+#     html_body = f"""
+#     <html>
+#     <head>
+#         <style>
+#             body {{
+#                 font-family: Arial, sans-serif;
+#                 background-color: #f4f4f4;
+#                 padding: 20px;
+#             }}
+#             .container {{
+#                 max-width: 700px;
+#                 background: #fff;
+#                 padding: 20px;
+#                 border-radius: 8px;
+#                 box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+#             }}
+#             h2 {{
+#                 color: #333;
+#                 text-align: center;
+#             }}
+#             p {{
+#                 font-size: 14px;
+#                 line-height: 1.5;
+#                 color: #555;
+#             }}
+#             .section {{
+#                 background: #f9f9f9;
+#                 padding: 10px;
+#                 border-radius: 6px;
+#                 margin-bottom: 15px;
+#             }}
+#             .footer {{
+#                 text-align: center;
+#                 font-size: 12px;
+#                 color: #888;
+#                 margin-top: 20px;
+#             }}
+#             table {{
+#                 width: 100%;
+#                 border-collapse: collapse;
+#                 margin-top: 10px;
+#             }}
+#             th, td {{
+#                 border: 1px solid #ddd;
+#                 padding: 8px;
+#                 text-align: left;
+#             }}
+#             th {{
+#                 background-color: #007bff;
+#                 color: white;
+#             }}
+#             tr:nth-child(even) {{
+#                 background-color: #f2f2f2;
+#             }}
+#         </style>
+#     </head>
+#     <body>
+#         <div class="container">
+#             <h2>🔍 Data Validation & Profiling Report</h2>
+
+#             <p>Dear Data Provider,</p>
+
+#             <p>
+#                 Thank you for submitting your data for processing. Below, you'll find an automated data quality 
+#                 assessment that includes key insights, validation checks, and profiling reports.
+#             </p>
+
+#             <div class="section">
+#                 <h3>1️⃣ Mismatches with Ground Truth</h3>
+#                 <p>{''.join(output_messages) if output_messages else "<span style='color: green;'>✅ No mismatches found.</span>"}</p>
+#             </div>
+
+#             <div class="section">
+#                 <h3>2️⃣ Data Quality Checks (Nulls, Data Type, Outliers)</h3>
+#                 <table>
+#                     <tr>
+#                         <th>Sheet</th>
+#                         <th>Column</th>
+#                         <th>Issue</th>
+#                     </tr>
+#                     {table_rows}
+#                 </table>
+#             </div>
+
+#             <div class="section">
+#                 <h3>3️⃣ Comprehensive Data Overview</h3>
+#                 <p>📊 Please see the attached profiling reports for a detailed analysis of your dataset.</p>
+#             </div>
+
+#             <p>
+#                 Our pipeline is continuously improving with your feedback, ensuring that we maintain high data quality standards.
+#                 If you have any questions or feedback, feel free to reach out.
+#             </p>
+
+#             <p>Best regards,</p>
+#             <p><strong>Bovi-Analytics Team</strong></p>
+
+#             <div class="footer">
+#                 📧 This is an automated message. Please do not reply directly.
+#             </div>
+#         </div>
+#     </body>
+#     </html>
+#     """
+
+#     try:
+#         # Initialize email
+#         msg = MIMEMultipart()
+#         msg['From'] = sender_email
+#         msg['To'] = ", ".join(recipient_emails)
+#         msg['Subject'] = subject
+#         msg.attach(MIMEText(html_body, "html"))  # ✅ Use HTML instead of plain text
+
+#         # Attach generated HTML reports
+#         report_files = glob.glob("*_report.html")
+#         if report_files:
+#             for report_file in report_files:
+#                 with open(report_file, "rb") as attachment:
+#                     part = MIMEBase("application", "octet-stream")
+#                     part.set_payload(attachment.read())
+#                     encoders.encode_base64(part)
+#                     part.add_header("Content-Disposition", f"attachment; filename={os.path.basename(report_file)}")
+#                     msg.attach(part)
+#         else:
+#             print("⚠ No report files found for attachment.")
+
+#         # Send email
+#         smtp_server = "smtp.gmail.com"
+#         port = 587
+#         with smtplib.SMTP(smtp_server, port) as server:
+#             server.starttls()
+#             server.login(sender_email, app_password)
+#             server.sendmail(sender_email, recipient_emails, msg.as_string())
+#             print("✅ Email sent successfully with attached reports!")
+
+#     except Exception as e:
+#         print(f"❌ Failed to send email: {e}")
