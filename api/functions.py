@@ -286,8 +286,7 @@ def send_email_with_reports(recipient_emails, output_messages, output_messages_c
         "client_secret": os.getenv("GMAIL_CLIENT_SECRET"),
         "token_uri": os.getenv("GMAIL_TOKEN_URI")
         }
-        if None in data.values():
-            data = token_json
+        data = token_json
         creds = Credentials.from_authorized_user_info(info=data)
         if creds.expired and creds.refresh_token:
             creds.refresh(Request())  # Automatically refreshes the access token
