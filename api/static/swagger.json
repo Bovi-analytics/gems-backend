@@ -10,7 +10,7 @@
   "schemes": ["https"],
   "tags": [
       {
-          "name": "Methane Data  Profiling Operations",
+          "name": "Methane Data Profiling Operations",
           "description": "Endpoints related to file processing and storage."
       }
   ],

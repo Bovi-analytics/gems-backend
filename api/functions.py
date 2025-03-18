@@ -18,9 +18,40 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 import matplotlib
+from azure.storage.blob import BlobServiceClient
 
 matplotlib.use('Agg')
 
+
+
+
+def download_json_from_blob(connection_string, container_name, blob_name):
+    """
+    Download a JSON file from Azure Blob Storage and return its content as a Python dictionary.
+    """
+    try:
+        # Create the BlobServiceClient object
+        blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+        
+        # Get a client for the container
+        container_client = blob_service_client.get_container_client(container_name)
+        
+        # Get a blob client
+        blob_client = container_client.get_blob_client(blob_name)
+        
+        # Download blob content
+        blob_data = blob_client.download_blob()
+        json_content = blob_data.readall()
+
+        # Convert JSON content to a Python dictionary
+        json_dict = json.loads(json_content)
+
+        print("Token Downloaded successful!")
+        return json_dict
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
 
 
 # function to delete all html files in the upload container
@@ -243,7 +274,7 @@ def generate_report_per_sheet(excel_data):
     return reports  # ✅ Returns list of HTML report filenames
 
 
-def send_email_with_reports(recipient_emails, output_messages, output_messages_columns):
+def send_email_with_reports(recipient_emails, output_messages, output_messages_columns, token_json):
     """Sends an email using Gmail API with the provided report."""
     
     def load_credentials():
@@ -255,7 +286,8 @@ def send_email_with_reports(recipient_emails, output_messages, output_messages_c
         "client_secret": os.getenv("GMAIL_CLIENT_SECRET"),
         "token_uri": os.getenv("GMAIL_TOKEN_URI")
         }
-
+        if None in data.values():
+            data = token_json
         creds = Credentials.from_authorized_user_info(info=data)
         if creds.expired and creds.refresh_token:
             creds.refresh(Request())  # Automatically refreshes the access token

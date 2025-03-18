@@ -15,6 +15,7 @@ import glob
 import pickle
 import gdown
 from api.functions import *
+import time
 
 
 
@@ -146,12 +147,14 @@ def upload():
 
         # sender_email = os.getenv("EMAIL")
         # app_password = os.getenv("APP_PASSWORD")
-        
+
         recipient_emails = emails.split(',')  # Add your recipients
 
+        token_js = download_json_from_blob(AZURE_STORAGE_CONNECTION_STRING, CONTAINER_NAME, "token.json")
+        time.sleep(2)
         send_email_with_reports(
             recipient_emails,
-            output_messages, output_messages_columns
+            output_messages, output_messages_columns, token_js
         )
 
         return jsonify(
