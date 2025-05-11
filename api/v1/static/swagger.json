@@ -5,9 +5,9 @@
       "description": "This API allows users to upload Excel files, process methane intensity data, store the processed file in Azure Blob Storage, and retrieve it later.",
       "version": "1.0.0"
   },
-  "host": "gems-backend.bovi-analytics.com",
-  "basePath": "/",
-  "schemes": ["https"],
+  "host": "127.0.0.1:5000",
+  "basePath": "/api/v1",
+  "schemes": ["http"],
   "tags": [
       {
           "name": "Methane Data Profiling Operations",
@@ -15,7 +15,7 @@
       }
   ],
   "paths": {
-      "/": {
+      "/gems/status": {
           "get": {
               "tags": ["Methane Data Operations"],
               "summary": "Check API Status",
@@ -36,7 +36,7 @@
               }
           }
       },
-      "/upload": {
+      "/gems/upload": {
           "post": {
               "tags": ["Methane Data Operations"],
               "summary": "Upload and Process File",
@@ -74,7 +74,7 @@
               }
           }
       },
-      "/get_processed_file": {
+      "/gems/get_processed_file": {
           "get": {
               "tags": ["Methane Data Operations"],
               "summary": "Retrieve Processed File Data",
@@ -105,7 +105,7 @@
               }
           }
       },
-      "/list_files": {
+      "/gems/list_files": {
           "get": {
               "tags": ["Methane Data Operations"],
               "summary": "List All Files in Storage",
