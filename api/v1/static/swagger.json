@@ -1,141 +1,200 @@
 {
   "swagger": "2.0",
   "info": {
-      "title": "Methane Data Profiling API",
-      "description": "This API allows users to upload Excel files, process methane intensity data, store the processed file in Azure Blob Storage, and retrieve it later.",
-      "version": "1.0.0"
+    "title": "Methane Data Profiling API",
+    "description": "This API allows users to upload Excel files, process methane intensity data, store the processed file in Azure Blob Storage, and retrieve it later.",
+    "version": "1.0.0"
   },
   "host": "127.0.0.1:5000",
   "basePath": "/api/v1",
   "schemes": ["http"],
+  "securityDefinitions": {
+    "bearerAuth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Enter your Auth0 access token like: Bearer {your_token}"
+    }
+  },
   "tags": [
-      {
-          "name": "Methane Data Profiling Operations",
-          "description": "Endpoints related to file processing and storage."
-      }
+    {
+      "name": "Methane Data Operations",
+      "description": "Endpoints related to file processing and storage."
+    }
   ],
   "paths": {
-      "/gems/status": {
-          "get": {
-              "tags": ["Methane Data Operations"],
-              "summary": "Check API Status",
-              "description": "Returns the status of the API to confirm it is active.",
-              "responses": {
-                  "200": {
-                      "description": "API is active",
-                      "schema": {
-                          "type": "object",
-                          "properties": {
-                              "API Status": {
-                                  "type": "string",
-                                  "example": "active"
-                              }
-                          }
-                      }
-                  }
+    "/gems/status": {
+      "get": {
+        "tags": ["Methane Data Operations"],
+        "summary": "Check API Status",
+        "description": "Returns the status of the API to confirm it is active.",
+        "responses": {
+          "200": {
+            "description": "API is active",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "API Status": {
+                  "type": "string",
+                  "example": "active"
+                }
               }
+            }
           }
-      },
-      "/gems/upload": {
-          "post": {
-              "tags": ["Methane Data Operations"],
-              "summary": "Upload and Process File",
-              "description": "Uploads an Excel file, processes it to check data quality, and stores the processed report in Azure Blob Storage. A notification email is sent to multiple recipients.",
-              "consumes": ["multipart/form-data"],
-              "parameters": [
-                  {
-                      "in": "formData",
-                      "name": "file",
-                      "type": "file",
-                      "required": true,
-                      "description": "The Excel file to be uploaded and processed."
-                  },
-                  {
-                      "in": "formData",
-                      "name": "emails",
-                      "type": "string",
-                      "required": true,
-                      "description": "Comma-separated list of recipient email addresses to notify upon successful processing."
-                  }
-              ],
-              "responses": {
-                  "200": {
-                      "description": "File processed and uploaded successfully.",
-                      "schema": {
-                          "type": "object",
-                          "properties": {
-                              "message": {"type": "string"},
-                              "file_url": {"type": "string", "format": "uri"}
-                          }
-                      }
-                  },
-                  "400": {"description": "Bad request due to missing file or emails."},
-                  "500": {"description": "Server error during processing."}
-              }
-          }
-      },
-      "/gems/get_processed_file": {
-          "get": {
-              "tags": ["Methane Data Operations"],
-              "summary": "Retrieve Processed File Data",
-              "description": "Fetches the processed file from Azure Blob Storage and returns its data in JSON format.",
-              "parameters": [
-                  {
-                      "name": "file_name",
-                      "in": "query",
-                      "required": true,
-                      "type": "string",
-                      "description": "The name of the processed file to retrieve."
-                  }
-              ],
-              "responses": {
-                  "200": {
-                      "description": "File retrieved successfully.",
-                      "schema": {
-                          "type": "object",
-                          "properties": {
-                              "message": {"type": "string"},
-                              "data": {"type": "array", "items": {"type": "object"}}
-                          }
-                      }
-                  },
-                  "400": {"description": "Missing file_name parameter."},
-                  "404": {"description": "File not found in Blob Storage."},
-                  "500": {"description": "Server error during retrieval."}
-              }
-          }
-      },
-      "/gems/list_files": {
-          "get": {
-              "tags": ["Methane Data Operations"],
-              "summary": "List All Files in Storage",
-              "description": "Retrieves a list of all files stored in Azure Blob Storage.",
-              "responses": {
-                  "200": {
-                      "description": "List of files retrieved successfully.",
-                      "schema": {
-                          "type": "object",
-                          "properties": {
-                              "files": {
-                                  "type": "array",
-                                  "items": {"type": "string"}
-                              }
-                          }
-                      }
-                  },
-                  "500": {"description": "Server error while retrieving file list."}
-              }
-          }
+        }
       }
+    },
+    "/gems/upload": {
+      "post": {
+        "tags": ["Methane Data Operations"],
+        "summary": "Upload and Process File",
+        "description": "Uploads an Excel file, processes it to check data quality, and stores the processed report in Azure Blob Storage. A notification email is sent to multiple recipients.",
+        "consumes": ["multipart/form-data"],
+        "parameters": [
+          {
+            "in": "formData",
+            "name": "file",
+            "type": "file",
+            "required": true,
+            "description": "The Excel file to be uploaded and processed."
+          },
+          {
+            "in": "formData",
+            "name": "emails",
+            "type": "string",
+            "required": true,
+            "description": "Comma-separated list of recipient email addresses to notify upon successful processing."
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File processed and uploaded successfully.",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" },
+                "file_url": { "type": "string", "format": "uri" }
+              }
+            }
+          },
+          "400": { "description": "Bad request due to missing file or emails." },
+          "401": { "description": "Unauthorized - missing or invalid token." },
+          "500": { "description": "Server error during processing." }
+        }
+      }
+    },
+    "/gems/get_processed_file": {
+      "get": {
+        "tags": ["Methane Data Operations"],
+        "summary": "Retrieve Processed File Data",
+        "description": "Fetches the processed file from Azure Blob Storage and returns its data in JSON format.",
+        "parameters": [
+          {
+            "name": "file_name",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "description": "The name of the processed file to retrieve."
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File retrieved successfully.",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": { "type": "string" },
+                "data": { "type": "array", "items": { "type": "object" } }
+              }
+            }
+          },
+          "400": { "description": "Missing file_name parameter." },
+          "401": { "description": "Unauthorized - missing or invalid token." },
+          "404": { "description": "File not found in Blob Storage." },
+          "500": { "description": "Server error during retrieval." }
+        }
+      }
+    },
+    "/gems/list_files": {
+      "get": {
+        "tags": ["Methane Data Operations"],
+        "summary": "List All Files in Storage",
+        "description": "Retrieves a list of all files stored in Azure Blob Storage.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of files retrieved successfully.",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "files": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - missing or invalid token." },
+          "500": { "description": "Server error while retrieving file list." }
+        }
+      }
+    },
+    "/gems/me": {
+      "get": {
+        "tags": ["Methane Data Operations"],
+        "summary": "Check Authenticated User Roles",
+        "description": "Returns confirmation that the token is valid and lists the user's roles.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User authenticated successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Authenticated!"
+                },
+                "roles": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          }
+        }
+      }
+    }
   },
   "definitions": {
-      "Error": {
-          "type": "object",
-          "properties": {
-              "error": {
-                  "type": "string"
-              }
-          }
+    "Error": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        }
       }
+    }
   }
 }
