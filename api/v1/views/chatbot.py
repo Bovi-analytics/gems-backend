@@ -3,14 +3,26 @@ from flask import jsonify, request
 import requests
 import json
 import os
+# from dotenv import load_dotenv
 
 
 
+# if os.getenv("FLASK_ENV") == "development":
+# load_dotenv()
 # Ideally, use environment variables in production!
-DATABRICKS_HOST = os.getenv("DATABRICKS_HOST", "https://adb-65044996157806.6.azuredatabricks.net")
-DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN", "dapi8316292f686dc872297741ba02ed48d6-3")
-DATABRICKS_ENDPOINT = f"https://adb-65044996157806.6.azuredatabricks.net/serving-endpoints/jds_rag_pinecone_plugin/invocations"
-DATABRICKS_ENDPOINT_FULL = f"https://adb-65044996157806.6.azuredatabricks.net/serving-endpoints/jds_rag_pinecone_web/invocations"
+# DATABRICKS_HOST = os.getenv("DATABRICKS_HOST", "https://adb-65044996157806.6.azuredatabricks.net")
+# DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN", "dapi8316292f686dc872297741ba02ed48d6-3")
+# DATABRICKS_ENDPOINT = f"https://adb-65044996157806.6.azuredatabricks.net/serving-endpoints/jds_rag_pinecone_plugin/invocations"
+# DATABRICKS_ENDPOINT_FULL = f"https://adb-65044996157806.6.azuredatabricks.net/serving-endpoints/jds_rag_pinecone_web/invocations"
+
+DATABRICKS_HOST = os.getenv("DATABRICKS_HOST")
+DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN")
+DATABRICKS_ENDPOINT = os.getenv("DATABRICKS_ENDPOINT")
+DATABRICKS_ENDPOINT_FULL = os.getenv("DATABRICKS_ENDPOINT_FULL")
+
+if not DATABRICKS_HOST or not DATABRICKS_TOKEN or not DATABRICKS_ENDPOINT or not DATABRICKS_ENDPOINT_FULL:
+    print("The environment variables are missing. Please set them in your .env file.")
+
 
 @app_views.route("/gems/chat", methods=["POST"], strict_slashes=False)
 def chat():

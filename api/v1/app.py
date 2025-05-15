@@ -5,24 +5,16 @@ import os
 from api.v1.views import app_views
 from flask_swagger_ui import get_swaggerui_blueprint
 
-# For graphql endpoint
-from flask_graphql import GraphQLView
-from api.v1.schema.root import schema
 
 app = Flask(__name__)
 app.register_blueprint(app_views)
-CORS(app, resources={r"/api/v1/gems/*": {"origins": ["http://localhost:3000", "http://localhost:5173", "http://localhost:5000"]}})  # Allow both React ports
-
+# CORS(app, resources={r"/api/v1/gems/*": {"origins": ["http://localhost:3000", "http://localhost:5173", "http://localhost:5000"]}})  # Allow both React ports
+CORS(app, resources={r"/api/v1/gems/*": {"origins": ["https://portal.bovi-analytics.com", "http://localhost:5173", "https://gems-backend.bovi-analytics.com/"]}})  # Allow both React ports
 # Setting up Swagger documentation
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 SWAGGER_URL = "/api/v1/swagger"
 API_URL = "/static/swagger.json"
 
-# Serve the GraphQL endpoint
-app.add_url_rule(
-    "/api/v1/graphql",
-    view_func=GraphQLView.as_view("graphql", schema=schema, graphiql=True)
-)
 
 # Serve the Swagger UI
 swagger_ui_blueprint = get_swaggerui_blueprint(

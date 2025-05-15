@@ -125,25 +125,7 @@ def upload():
     if not emails:
         return jsonify({'error': 'No email provided'}), 400
 
-    # Optional: Role-based access control
-    # token = request.headers.get('Authorization').split('Bearer ')[1]
-    # from jose import jwt
-    # jwks = requests.get(f'https://{validator.issuer}/.well-known/jwks.json').json()
-    # header = jwt.get_unverified_header(token)
-    # key = next(k for k in jwks['keys'] if k['kid'] == header['kid'])
-    # public_key = jwt.algorithms.RSAAlgorithm.from_jwk(key)
-    # payload = jwt.decode(
-    #     token,
-    #     public_key,
-    #     algorithms=['RS256'],
-    #     audience=validator.audience,
-    #     issuer=f'https://{validator.issuer}/'
-    # )
-    # roles = payload.get('https://gems-backend.bovi-analytics.com/roles', [])
-    # if 'uploader' not in roles:
-    #     return jsonify({'error': 'Insufficient permissions'}), 403
-
-    return jsonify({'message': 'File upload successful'}), 200
+    # return jsonify({'message': 'File upload successful'}), 200
     try:
         # Load ground truth data
         container_name = "cornell"
