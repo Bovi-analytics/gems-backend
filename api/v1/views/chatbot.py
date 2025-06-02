@@ -3,9 +3,9 @@ from flask import jsonify, request
 import requests
 import json
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
-load_dotenv()
+# load_dotenv()
 
 
 DATABRICKS_HOST = os.getenv("DATABRICKS_HOST")
