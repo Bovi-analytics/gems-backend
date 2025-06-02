@@ -48,8 +48,8 @@ def chat():
         # Extract the AI response from the response structure
         ai_reply = ""
         if data and isinstance(data, list) and "messages" in data[0]:
-            ai_reply = "I don't know."
             for msg in data[0]["messages"]:
+                ai_reply = "I don't know."
                 if msg.get("type") == "ai" and msg.get("content"):
                     ai_reply = msg.get("content", "")
                     if ai_reply == "I don't know.":
