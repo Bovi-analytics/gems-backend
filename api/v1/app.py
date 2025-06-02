@@ -9,7 +9,7 @@ from flask_swagger_ui import get_swaggerui_blueprint
 app = Flask(__name__)
 app.register_blueprint(app_views)
 # CORS(app, resources={r"/api/v1/gems/*": {"origins": ["http://localhost:3000", "http://localhost:5173", "http://localhost:5000"]}})  # Allow both React ports
-CORS(app, resources={r"/api/v1/gems/*": {"origins": ["https://portal.bovi-analytics.com", "http://localhost:5173", "https://gems-backend.bovi-analytics.com/"]}})  # Allow both React ports
+CORS(app, resources={r"/api/v1/gems/*": {"origins": ["https://portal.bovi-analytics.com", "http://localhost:3000", "https://gems-backend.bovi-analytics.com/"]}})  # Allow both React ports
 # Setting up Swagger documentation
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 SWAGGER_URL = "/api/v1/swagger"
@@ -59,7 +59,7 @@ def not_authorized(error):
 @app.errorhandler(403)
 def forbidden(error):
     """Forbidden handler"""
-    return jsonify({"error": "Forbidden"}),  Ascending
+    return jsonify({"error": "Forbidden"}),
 
 if __name__ == '__main__':
     HOST = os.getenv("API_HOST", "0.0.0.0")

@@ -5,3 +5,4 @@ venv/
 *.html
 token.json
 upload_file.ipynb
+test.py

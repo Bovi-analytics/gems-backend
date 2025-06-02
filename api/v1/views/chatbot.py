@@ -5,6 +5,8 @@ import json
 import os
 # from dotenv import load_dotenv
 
+# load_dotenv()
+
 
 DATABRICKS_HOST = os.getenv("DATABRICKS_HOST")
 DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN")
@@ -46,9 +48,12 @@ def chat():
         # Extract the AI response from the response structure
         ai_reply = ""
         if data and isinstance(data, list) and "messages" in data[0]:
+            ai_reply = "I don't know."
             for msg in data[0]["messages"]:
                 if msg.get("type") == "ai" and msg.get("content"):
                     ai_reply = msg.get("content", "")
+                    if ai_reply == "I don't know.":
+                        continue
                     break
 
         return jsonify({"response": ai_reply})
