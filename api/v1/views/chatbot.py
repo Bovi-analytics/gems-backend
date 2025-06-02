@@ -3,9 +3,9 @@ from flask import jsonify, request
 import requests
 import json
 import os
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 
-# load_dotenv()
+load_dotenv()
 
 
 DATABRICKS_HOST = os.getenv("DATABRICKS_HOST")
@@ -95,8 +95,11 @@ def chat_full_page():
         ai_reply = ""
         if data and isinstance(data, list) and "messages" in data[0]:
             for msg in data[0]["messages"]:
+                ai_reply = "I don't know."
                 if msg.get("type") == "ai" and msg.get("content"):
                     ai_reply = msg.get("content", "")
+                    if ai_reply == "I don't know.":
+                        continue
                     break
 
         return jsonify({"response": ai_reply})
