@@ -3,9 +3,8 @@ from flask import jsonify, request
 import requests
 import json
 import os
-# from dotenv import load_dotenv
+from api.v1.functions import milkbot_visuals_from_db_endpoint
 
-# load_dotenv()
 
 
 DATABRICKS_HOST = os.getenv("DATABRICKS_HOST")
@@ -103,6 +102,27 @@ def chat_full_page():
                     break
 
         return jsonify({"response": ai_reply})
+
+    except Exception as e:
+        print(e)
+        return jsonify({"error": str(e)}), 500
+
+
+@app_views.route("/gems/chat-visual", methods=["POST"], strict_slashes=False)
+def chat_visual():
+    try:
+        user_message = request.json.get("message", "")
+        if not user_message:
+            return jsonify({"error": "No message provided"}), 400
+
+        # Generate and save graph based on the query
+        image_name = milkbot_visuals_from_db_endpoint(user_message)
+        image_url = f"/static/visuals/{image_name}"
+
+        return jsonify({
+            "type": "image",
+            "image_url": image_url
+        })
 
     except Exception as e:
         print(e)

@@ -5,8 +5,10 @@ import os
 from api.v1.views import app_views
 from flask_swagger_ui import get_swaggerui_blueprint
 
+# from dotenv import load_dotenv
+# load_dotenv()
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.register_blueprint(app_views)
 # CORS(app, resources={r"/api/v1/gems/*": {"origins": ["http://localhost:3000", "http://localhost:5173", "http://localhost:5000"]}})  # Allow both React ports
 CORS(app, resources={r"/api/v1/gems/*": {"origins": ["https://portal.bovi-analytics.com", "http://localhost:3000", "https://gems-backend.bovi-analytics.com/"]}})  # Allow both React ports
